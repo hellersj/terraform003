@@ -1,0 +1,22 @@
+In Terraform, a dynamic block works like a loop that lets you generate repeated nested blocks inside a resource without writing each one manually. It’s useful when a resource accepts multiple sub-blocks with the same structure but different values.
+
+The resource azurerm_network_security_group supports multiple security_rule blocks. Instead of defining them one by one, you use a dynamic "security_rule" block with for_each = var.security_rules. Terraform will iterate over each object in the list security_rules and create a security_rule block for it. Inside content {}, you define how each generated block should look, using security_rule.value.<field> to reference values.
+
+For example, given your variable security_rules, Terraform will expand the dynamic block into multiple security_rule blocks such as one allowing inbound TCP on port 80, one allowing inbound TCP on port 443, one denying outbound UDP on port 53, etc. In practice, the code:
+
+dynamic "security_rule" {
+  for_each = var.security_rules
+  content {
+    name                       = security_rule.value.name
+    priority                   = security_rule.value.priority
+    direction                  = security_rule.value.direction
+    access                     = security_rule.value.access
+    protocol                   = security_rule.value.protocol
+    source_port_range          = security_rule.value.source_port_range
+    destination_port_range     = security_rule.value.destination_port_range
+    source_address_prefix      = security_rule.value.source_address_prefix
+    destination_address_prefix = security_rule.value.destination_address_prefix
+  }
+}
+
+will be expanded by Terraform into the equivalent of several explicit security_rule { ... } blocks, one per object in the list. In short: a dynamic block saves you from repeating code and tells Terraform “create one of these blocks for every item in my collection.”

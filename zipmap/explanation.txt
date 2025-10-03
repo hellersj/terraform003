@@ -1,0 +1,66 @@
+resource "azurerm_resource_group" "example" {
+  name     = "demo-RG"
+  location = "eastus"
+}
+
+resource "azurerm_public_ip" "example" {
+  name                = var.mypip[count.index]
+  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.example.location
+  allocation_method   = "Static"
+  count               = 4
+}
+
+variable "mypip" {
+  type    = list
+  default = ["prod-pip", "dev-pip", "test-pip", "qa-pip"]
+}
+
+# Without zipmap:
+# This gives only a list of IP addresses in the same order as your variable names.
+output "pip_address" {
+  value = azurerm_public_ip.example[*].ip_address
+}
+
+# With zipmap:
+# This combines the names (var.mypip) with the IP addresses and creates a map.
+output "pip_map" {
+  value = zipmap(
+    var.mypip,
+    azurerm_public_ip.example[*].ip_address
+  )
+}
+
+***********************************************
+
+What happens?
+
+pip_address output → You get just a list of IPs, like:
+
+pip_address = [
+  "20.42.47.176",
+  "172.173.166.249",
+  "4.246.220.2",
+  "52.183.21.11",
+]
+
+pip_map output → You get a map where each name from var.mypip is linked to its IP:
+
+pip_map = {
+  "prod-pip" = "20.42.47.176"
+  "dev-pip"  = "172.173.166.249"
+  "test-pip" = "4.246.220.2"
+  "qa-pip"   = "52.183.21.11"
+}
+
+Why use zipmap here?
+
+The plain [*] expression only gives you an ordered list of values.
+
+zipmap is more powerful: it creates key → value pairs, making your outputs human-friendly and easier to consume in other modules.
+
+In other words:
+
+[*] = a bag of IPs.
+
+zipmap = a labeled dictionary that tells you which IP belongs to which name..

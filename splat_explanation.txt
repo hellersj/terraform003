@@ -1,0 +1,39 @@
+The idea is to use the expression [*] to fetch the IPs of all:
+
+output "pip_address" {
+  value = azurerm_public_ip.example[*].ip_address
+}
+
+Which gives us as a result:
+
+Changes to Outputs:
+  + pip_address = [
+      + (known after apply),
+      + (known after apply),
+      + (known after apply),
+      + (known after apply),
+    ]
+
+And after the apply:
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+pip_address = [
+  "20.42.47.176",
+  "172.173.166.249",
+  "4.246.220.2",
+]
+
+Without the use of [*] the system gets confused and doesn’t give us the requested output:
+
+Error: Missing resource instance key
+│
+│   on main.tf line 16, in output "pip_address":
+│   16:    value = azurerm_public_ip.example.ip_address
+│
+│ Because azurerm_public_ip.example has "count" set, its attributes must be accessed on specific instances.
+│
+│ For example, to correlate with indices of a referring resource, use:
+│     azurerm_public_ip.example[count.index]
